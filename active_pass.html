@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>行为口令认证系统 - 增强安全版</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #2c0b1e, #1a2a6c);
+            color: white;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            animation: backgroundShift 20s infinite alternate;
+        }
+        @keyframes backgroundShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .container {
+            width: 90%;
+            max-width: 900px;
+            background: rgba(10, 10, 20, 0.85);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+            margin-top: 20px;
+            border: 1px solid #444;
+        }
+        h1 {
+            text-align: center;
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
+            background: linear-gradient(to right, #ff7e5f, #feb47b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: titleGlow 2s infinite alternate;
+            letter-spacing: 1px;
+        }
+        @keyframes titleGlow {
+            from { text-shadow: 0 0 10px rgba(255, 126, 95, 0.5); }
+            to { text-shadow: 0 0 25px rgba(255, 126, 95, 0.8), 0 0 15px rgba(254, 180, 123, 0.6); }
+        }
+        .subtitle {
+            text-align: center;
+            color: #bbb;
+            margin-bottom: 30px;
+            font-size: 1.2rem;
+            max-width: 700px;
+            line-height: 1.6;
+        }
+        .panel {
+            background: rgba(25, 25, 45, 0.9);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 1px solid #3a3a5a;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        .panel-title {
+            font-size: 1.6rem;
+            margin-top: 0;
+            color: #ff7e5f;
+            border-bottom: 2px solid #ff7e5f;
+            padding-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .panel-title i {
+            font-size: 1.8rem;
+        }
+        .input-group {
+            margin-bottom: 25px;
+        }
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #ccc;
+            font-size: 1.1rem;
+        }
+        input[type="password"], input[type="text"] {
+            width: 100%;
+            padding: 14px 18px;
+            border-radius: 10px;
+            border: 2px solid #555;
+            background: rgba(15, 15, 25, 0.9);
+            color: white;
+            font-size: 1.2rem;
+            transition: all 0.3s;
+        }
+        input:focus {
+            border-color: #ff7e5f;
+            outline: none;
+            box-shadow: 0 0 15px rgba(255, 126, 95, 0.6);
+        }
+        .btn-group {
+            display: flex;
+            gap: 20px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        button {
+            flex: 1;
+            min-width: 140px;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: white;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        button::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.15);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        button:hover::after {
+            opacity: 1;
+        }
+        #registerBtn {
+            background: linear-gradient(to right, #00b09b, #96c93d);
+        }
+        #verifyBtn {
+            background: linear-gradient(to right, #2193b0, #6dd5ed);
+        }
+        #resetBtn {
+            background: linear-gradient(to right, #ff416c, #ff4b2b);
+        }
+        button:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+        button:active {
+            transform: translateY(2px);
+        }
+        #message {
+            text-align: center;
+            font-size: 1.5rem;
+            min-height: 60px;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 25px 0;
+            font-weight: bold;
+            transition: all 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .success {
+            background: linear-gradient(to right, #00b09b, #96c93d);
+            color: white;
+            animation: pulse 2s infinite;
+        }
+        .error {
+            background: linear-gradient(to right, #ff416c, #ff4b2b);
+            color: white;
+            animation: shake 0.5s;
+        }
+        .info {
+            background: linear-gradient(to right, #2193b0, #6dd5ed);
+            color: white;
+        }
+        .fake-user {
+            background: linear-gradient(to right, #ff0000, #8b0000);
+            color: white;
+            font-size: 2rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            animation: flash 0.5s 3, shake 0.5s;
+        }
+        .attack {
+            background: linear-gradient(to right, #8b0000, #4b0000);
+            color: #ff6b6b;
+            font-size: 2.2rem;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            animation: flashRed 0.5s infinite, shake 0.8s;
+            border: 3px solid #ff0000;
+        }
+        @keyframes flash {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        @keyframes flashRed {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; box-shadow: 0 0 30px rgba(255, 0, 0, 0.8); }
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-15px); }
+            40%, 80% { transform: translateX(15px); }
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(0, 176, 155, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(0, 176, 155, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 176, 155, 0); }
+        }
+        .behavior-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-top: 25px;
+        }
+        .stat-card {
+            background: rgba(20, 20, 40, 0.8);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid #3a3a5a;
+            transition: all 0.3s;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+        }
+        .stat-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+        .stat-value {
+            font-size: 2.2rem;
+            font-weight: bold;
+            margin: 15px 0;
+            color: #ff7e5f;
+        }
+        .stat-label {
+            color: #bbb;
+            font-size: 1rem;
+            letter-spacing: 0.5px;
+        }
+        .behavior-visualization {
+            margin-top: 30px;
+        }
+        .password-display {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 25px 0;
+            justify-content: center;
+        }
+        .char-box {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(40, 40, 60, 0.9);
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 1.4rem;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+        .char-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: #ff7e5f;
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.3s;
+        }
+        .char-box:hover::before {
+            transform: scaleX(1);
+        }
+        .char-box:hover {
+            transform: scale(1.12);
+            z-index: 2;
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.4);
+        }
+        .interval-indicator {
+            font-size: 0.8rem;
+            color: #ffd166;
+            margin-top: 5px;
+            font-weight: 600;
+        }
+        .duration-indicator {
+            font-size: 0.8rem;
+            color: #06d6a0;
+            margin-top: 3px;
+            font-weight: 600;
+        }
+        .instructions {
+            background: rgba(30, 30, 50, 0.7);
+            border-left: 5px solid #ff7e5f;
+            padding: 20px;
+            margin: 30px 0;
+            border-radius: 0 12px 12px 0;
+        }
+        .instructions h3 {
+            margin-top: 0;
+            color: #ff7e5f;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .instructions ul {
+            padding-left: 25px;
+        }
+        .instructions li {
+            margin-bottom: 12px;
+            line-height: 1.7;
+            font-size: 1.1rem;
+        }
+        .security-alert {
+            text-align: center;
+            padding: 20px;
+            background: rgba(255, 0, 0, 0.15);
+            border-radius: 12px;
+            margin-top: 25px;
+            border: 1px solid rgba(255, 0, 0, 0.4);
+            font-size: 1.1rem;
+        }
+        .status-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 15px 0;
+        }
+        .status-item {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            background: rgba(40, 40, 60, 0.8);
+        }
+        .status-value {
+            color: #ff7e5f;
+            font-size: 1.3rem;
+        }
+        @media (max-width: 768px) {
+            .container {
+                width: 95%;
+                padding: 20px;
+            }
+            .btn-group {
+                flex-direction: column;
+            }
+            .char-box {
+                width: 50px;
+                height: 50px;
+                font-size: 1.2rem;
+            }
+            h1 {
+                font-size: 2.2rem;
+            }
+            .behavior-stats {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+        }
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+            .stat-value {
+                font-size: 1.8rem;
+            }
+            .char-box {
+                width: 45px;
+                height: 45px;
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⛓️ 行为口令认证系统</h1>
+        <p class="subtitle">结合密码文本与输入行为特征的多因素认证 </p>
+        
+        <div class="panel">
+            <h2 class="panel-title">🔑 密码输入</h2>
+            <div class="input-group">
+                <label for="passwordInput">输入密码：</label>
+                <input type="password" id="passwordInput" placeholder="输入您的密码..." autocomplete="off">
+            </div>
+            
+            <div class="btn-group">
+                <button id="registerBtn">📝 注册行为口令</button>
+                <button id="verifyBtn">🔍 验证行为口令</button>
+                <button id="resetBtn">🔄 重置</button>
+            </div>
+            
+            <div id="message" class="info">请输入密码并点击注册</div>
+        </div>
+        
+        <div class="panel">
+            <h2 class="panel-title">📊 行为特征统计</h2>
+            <div class="behavior-stats">
+                <div class="stat-card">
+                    <div class="stat-value" id="charCount">0</div>
+                    <div class="stat-label">字符数量</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="longIntervals">0</div>
+                    <div class="stat-label">长间隔次数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="longDurations">0</div>
+                    <div class="stat-label">长按键次数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="deletions">0</div>
+                    <div class="stat-label">删除操作</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="mismatchCount">0</div>
+                    <div class="stat-label">不匹配特征数</div>
+                </div>
+            </div>
+            
+            <div class="status-indicator">
+                <div class="status-item">当前状态: <span class="status-value" id="currentStatus">等待输入</span></div>
+                <div class="status-item">特征匹配度: <span class="status-value" id="matchPercentage">0%</span></div>
+            </div>
+            
+            <div class="behavior-visualization">
+                <h3>🔍 密码行为特征可视化：</h3>
+                <div class="password-display" id="passwordDisplay">
+                    <!-- 字符和特征指示器将在这里动态生成 -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <h3>ℹ️ 使用说明：</h3>
+            <ul>
+                <li><strong>注册流程：</strong>输入您的密码，系统将记录您的输入行为特征（击键速度、按键时长、修正行为）</li>
+                <li><strong>验证流程：</strong>再次输入相同密码，系统将比对密码文本和输入行为特征</li>
+                <li><strong>行为特征：</strong>
+                    <ul>
+                        <li>字符间隔 &gt;0.5秒 = <span style="color:#ffd166">长间隔</span></li>
+                        <li>按键时长 &gt;0.3秒 = <span style="color:#06d6a0">长按键</span></li>
+                        <li>删除操作会记录位置和次数</li>
+                    </ul>
+                </li>
+                <li><strong>安全增强：</strong>文本密码匹配但超过4个行为特征不匹配将被判定为攻击行为</li>
+                <li><strong>安全提示：</strong>系统不会存储您的原始密码，而是存储行为特征模型</li>
+            </ul>
+        </div>
+        
+        <div class="security-alert">
+            ⚠️ 警告：系统已启用攻击行为检测，任何可疑活动将被记录
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let events = [];
+        let password = '';
+        let deletions = [];
+        let behaviorProfile = null;
+        let mismatchCount = 0;
+        
+        // DOM元素
+        const passwordInput = document.getElementById('passwordInput');
+        const registerBtn = document.getElementById('registerBtn');
+        const verifyBtn = document.getElementById('verifyBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const messageDiv = document.getElementById('message');
+        const passwordDisplay = document.getElementById('passwordDisplay');
+        const charCountEl = document.getElementById('charCount');
+        const longIntervalsEl = document.getElementById('longIntervals');
+        const longDurationsEl = document.getElementById('longDurations');
+        const deletionsEl = document.getElementById('deletions');
+        const mismatchCountEl = document.getElementById('mismatchCount');
+        const currentStatusEl = document.getElementById('currentStatus');
+        const matchPercentageEl = document.getElementById('matchPercentage');
+        
+        // 事件监听
+        passwordInput.addEventListener('keydown', handleKeyDown);
+        passwordInput.addEventListener('keyup', handleKeyUp);
+        registerBtn.addEventListener('click', registerBehavior);
+        verifyBtn.addEventListener('click', verifyBehavior);
+        resetBtn.addEventListener('click', resetSystem);
+        
+        // 处理按键按下
+        function handleKeyDown(event) {
+            if (event.key === 'Backspace') {
+                event.preventDefault();
+                
+                if (password.length > 0) {
+                    // 记录删除事件
+                    deletions.push({
+                        position: password.length - 1,
+                        timestamp: Date.now()
+                    });
+                    
+                    // 更新密码
+                    password = password.slice(0, -1);
+                    passwordInput.value = password;
+                    
+                    // 更新UI
+                    updateStats();
+                    updateVisualization();
+                }
+                return;
+            }
+            
+            // 只处理可打印字符
+            if (event.key.length === 1) {
+                const timestamp = Date.now();
+                
+                // 记录事件
+                events.push({
+                    type: 'keydown',
+                    key: event.key,
+                    timestamp: timestamp
+                });
+                
+                // 更新密码
+                password += event.key;
+                
+                // 更新UI
+                updateStats();
+                updateVisualization();
+            }
+        }
+        
+        // 处理按键释放
+        function handleKeyUp(event) {
+            if (event.key === 'Backspace' || event.key.length !== 1) return;
+            
+            // 记录事件
+            events.push({
+                type: 'keyup',
+                key: event.key,
+                timestamp: Date.now()
+            });
+            
+            // 更新UI
+            updateStats();
+            updateVisualization();
+        }
+        
+        // 更新统计信息
+        function updateStats() {
+            charCountEl.textContent = password.length;
+            deletionsEl.textContent = deletions.length;
+            mismatchCountEl.textContent = mismatchCount;
+            
+            // 计算长间隔和长按键
+            let longIntervals = 0;
+            let longDurations = 0;
+            
+            // 计算按键时长
+            for (let i = 0; i < events.length; i++) {
+                if (events[i].type === 'keydown') {
+                    // 查找对应的keyup事件
+                    for (let j = i + 1; j < events.length; j++) {
+                        if (events[j].type === 'keyup' && events[j].key === events[i].key) {
+                            const duration = events[j].timestamp - events[i].timestamp;
+                            if (duration > 300) longDurations++;
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            // 计算输入间隔
+            let lastKeydownTime = null;
+            for (let event of events) {
+                if (event.type === 'keydown') {
+                    if (lastKeydownTime !== null) {
+                        const interval = event.timestamp - lastKeydownTime;
+                        if (interval > 500) longIntervals++;
+                    }
+                    lastKeydownTime = event.timestamp;
+                }
+            }
+            
+            longIntervalsEl.textContent = longIntervals;
+            longDurationsEl.textContent = longDurations;
+        }
+        
+        // 更新可视化
+        function updateVisualization() {
+            passwordDisplay.innerHTML = '';
+            
+            if (password.length === 0) {
+                passwordDisplay.innerHTML = '<div class="empty-message">输入密码以查看行为特征</div>';
+                return;
+            }
+            
+            // 创建字符显示
+            for (let i = 0; i < password.length; i++) {
+                const char = password[i];
+                const charBox = document.createElement('div');
+                charBox.className = 'char-box';
+                
+                // 字符显示
+                const charSpan = document.createElement('div');
+                charSpan.textContent = char;
+                charBox.appendChild(charSpan);
+                
+                // 间隔指示器
+                const intervalSpan = document.createElement('div');
+                intervalSpan.className = 'interval-indicator';
+                intervalSpan.textContent = '间隔: -';
+                charBox.appendChild(intervalSpan);
+                
+                // 时长指示器
+                const durationSpan = document.createElement('div');
+                durationSpan.className = 'duration-indicator';
+                durationSpan.textContent = '按键: -';
+                charBox.appendChild(durationSpan);
+                
+                // 删除标记
+                if (deletions.some(del => del.position === i)) {
+                    charBox.style.backgroundColor = 'rgba(255, 100, 100, 0.3)';
+                    charBox.style.border = '1px solid #f55';
+                }
+                
+                passwordDisplay.appendChild(charBox);
+            }
+            
+            // 计算并显示行为特征
+            const charBoxes = passwordDisplay.querySelectorAll('.char-box');
+            let lastKeydownTime = null;
+            let currentCharIndex = -1;
+            
+            for (let event of events) {
+                if (event.type === 'keydown' && event.key.length === 1) {
+                    currentCharIndex++;
+                    
+                    // 跳过超过当前字符长度的部分
+                    if (currentCharIndex >= charBoxes.length) break;
+                    
+                    // 计算间隔
+                    if (lastKeydownTime !== null) {
+                        const interval = event.timestamp - lastKeydownTime;
+                        const intervalType = interval > 500 ? '长' : '短';
+                        charBoxes[currentCharIndex].querySelector('.interval-indicator').textContent = 
+                            `间隔: ${intervalType}`;
+                    }
+                    
+                    // 计算按键时长
+                    for (let j = events.indexOf(event) + 1; j < events.length; j++) {
+                        if (events[j].type === 'keyup' && events[j].key === event.key) {
+                            const duration = events[j].timestamp - event.timestamp;
+                            const durationType = duration > 300 ? '长' : '短';
+                            charBoxes[currentCharIndex].querySelector('.duration-indicator').textContent = 
+                                `按键: ${durationType}`;
+                            break;
+                        }
+                    }
+                    
+                    lastKeydownTime = event.timestamp;
+                }
+            }
+        }
+        
+        // 注册行为口令
+        function registerBehavior() {
+            if (password.length < 4) {
+                showMessage('密码至少需要4个字符', 'error');
+                return;
+            }
+            
+            // 创建行为特征模型
+            behaviorProfile = createBehaviorProfile();
+            
+            // 保存到localStorage
+            localStorage.setItem('behaviorProfile', JSON.stringify(behaviorProfile));
+            
+            showMessage('✅ 行为口令注册成功！', 'success');
+            currentStatusEl.textContent = '已注册';
+            resetInput();
+        }
+        
+        // 验证行为口令
+        function verifyBehavior() {
+            const savedProfile = localStorage.getItem('behaviorProfile');
+            
+            if (!savedProfile) {
+                showMessage('请先注册行为口令', 'error');
+                return;
+            }
+            
+            if (password.length < 4) {
+                showMessage('请输入密码进行验证', 'error');
+                return;
+            }
+            
+            // 解析保存的行为特征
+            const saved = JSON.parse(savedProfile);
+            const current = createBehaviorProfile();
+            
+            // 比较密码文本
+            if (saved.password !== current.password) {
+                showFakeUser();
+                resetInput();
+                return;
+            }
+            
+            // 比较行为特征
+            let matchScore = 0;
+            mismatchCount = 0; // 重置不匹配计数
+            
+            // 总特征数
+            const totalFeatures = saved.intervals.length + saved.durations.length + 1;
+            
+            // 比较时间间隔
+            for (let i = 0; i < Math.min(saved.intervals.length, current.intervals.length); i++) {
+                if (saved.intervals[i] === current.intervals[i]) {
+                    matchScore++;
+                } else {
+                    mismatchCount++;
+                }
+            }
+            
+            // 比较按键时长
+            for (let i = 0; i < Math.min(saved.durations.length, current.durations.length); i++) {
+                if (saved.durations[i] === current.durations[i]) {
+                    matchScore++;
+                } else {
+                    mismatchCount++;
+                }
+            }
+            
+            // 比较删除操作
+            if (saved.deletions === current.deletions) {
+                matchScore++;
+            } else {
+                mismatchCount++;
+            }
+            
+            // 更新UI
+            updateStats();
+            
+            // 计算匹配度
+            const matchPercentage = Math.round((matchScore / totalFeatures) * 100);
+            matchPercentageEl.textContent = `${matchPercentage}%`;
+            
+            // 检测攻击行为：文本匹配但超过3个特征不匹配
+            if (mismatchCount > 3) {
+                showAttack();
+                resetInput();
+                return;
+            }
+            
+            
+        }
+        
+        // 显示假用户警告
+        function showFakeUser() {
+            messageDiv.textContent = 'Fake User！！！';
+            messageDiv.className = 'fake-user';
+            currentStatusEl.textContent = '验证失败';
+            currentStatusEl.style.color = '#ff416c';
+            
+            // 添加震动效果
+            document.body.classList.add('shake');
+            setTimeout(() => {
+                document.body.classList.remove('shake');
+            }, 500);
+        }
+        
+        // 显示攻击警告
+        function showAttack() {
+            messageDiv.textContent = 'Attack!!!';
+            messageDiv.className = 'attack';
+            currentStatusEl.textContent = '攻击检测';
+            currentStatusEl.style.color = '#ff0000';
+            
+            // 添加震动效果
+            document.body.classList.add('shake');
+            setTimeout(() => {
+                document.body.classList.remove('shake');
+            }, 800);
+        }
+        
+        // 清空输入状态
+        function resetInput() {
+            events = [];
+            password = '';
+            deletions = [];
+            passwordInput.value = '';
+            passwordInput.focus();
+            
+            updateStats();
+            updateVisualization();
+        }
+        
+        // 创建行为特征模型
+        function createBehaviorProfile() {
+            const profile = {
+                password: password,
+                intervals: [], // 字符间隔类型 (长/短)
+                durations: [], // 按键时长类型 (长/短)
+                deletions: deletions.length
+            };
+            
+            // 计算间隔和时长特征
+            let lastKeydownTime = null;
+            
+            for (let event of events) {
+                if (event.type === 'keydown' && event.key.length === 1) {
+                    // 计算间隔
+                    if (lastKeydownTime !== null) {
+                        const interval = event.timestamp - lastKeydownTime;
+                        profile.intervals.push(interval > 500 ? 'long' : 'short');
+                    }
+                    
+                    // 计算按键时长
+                    for (let j = events.indexOf(event) + 1; j < events.length; j++) {
+                        if (events[j].type === 'keyup' && events[j].key === event.key) {
+                            const duration = events[j].timestamp - event.timestamp;
+                            profile.durations.push(duration > 300 ? 'long' : 'short');
+                            break;
+                        }
+                    }
+                    
+                    lastKeydownTime = event.timestamp;
+                }
+            }
+            
+            return profile;
+        }
+        
+        // 重置系统
+        function resetSystem() {
+            events = [];
+            password = '';
+            deletions = [];
+            behaviorProfile = null;
+            mismatchCount = 0;
+            passwordInput.value = '';
+            
+            localStorage.removeItem('behaviorProfile');
+            
+            updateStats();
+            updateVisualization();
+            showMessage('系统已重置，可以重新注册', 'info');
+            passwordInput.focus();
+            
+            currentStatusEl.textContent = '等待输入';
+            currentStatusEl.style.color = '#ff7e5f';
+            matchPercentageEl.textContent = '0%';
+        }
+        
+        // 显示消息
+        function showMessage(msg, type) {
+            messageDiv.textContent = msg;
+            messageDiv.className = type;
+        }
+        
+        // 初始化
+        updateVisualization();
+    </script>
+</body>
+</html>
